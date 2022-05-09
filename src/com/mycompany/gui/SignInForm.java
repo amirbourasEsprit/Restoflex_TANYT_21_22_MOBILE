@@ -49,13 +49,13 @@ public class SignInForm extends BaseForm {
         getTitleArea().setUIID("Container");
         setUIID("SignIn");
         
-        add(BorderLayout.NORTH, new Label(res.getImage("Logo.png"), "LogoLabel"));
+        add(BorderLayout.NORTH, new Label(res.getImage("smily.png"), "LogoLabel"));
         
         TextField email = new TextField("", "Email", 20, TextField.ANY);
         TextField password = new TextField("", "Password", 20, TextField.PASSWORD);
         email.setSingleLineTextArea(false);
         password.setSingleLineTextArea(false);
-        Button signIn = new Button("Sign In");
+        Button signIn = new Button("Se Connecter");
         Button signUpEmp = new Button(" Employée");
         Button signUpFour = new Button("Fournisseur");
         

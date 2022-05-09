@@ -20,8 +20,6 @@
 package com.mycompany.gui;
 
 import com.codename1.components.FloatingHint;
-import com.codename1.components.InfiniteProgress;
-import com.codename1.components.SpanLabel;
 
 import com.codename1.ui.Button;
 import com.codename1.ui.Command;
@@ -37,13 +35,10 @@ import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.layouts.FlowLayout;
 import com.codename1.ui.util.Resources;
 import com.mycompany.services.ServiceUtilisateur;
-import com.sun.mail.smtp.SMTPTransport;
-import java.util.Date;
-import java.util.Properties;
-import javax.mail.Message;
-import javax.mail.Session;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
+import static java.lang.String.valueOf;
+import com.mycompany.services.SendMail;
+import java.util.Random;
+
 
 /**
  * Account activation UI
@@ -51,7 +46,9 @@ import javax.mail.internet.MimeMessage;
  * @author Shai Almog
  */
 public class ActivateForm extends BaseForm {
-TextField email;
+            Random random = new Random();
+  public static String username;
+    public static String verificationCode;
     public ActivateForm(Resources res) {
         super(new BorderLayout());
         Toolbar tb = new Toolbar(true);
@@ -71,9 +68,9 @@ TextField email;
         TextField email =new TextField("","sasir votre email",20,TextField.ANY);
         email.setSingleLineTextArea(false);
         
-        Button valider =new Button("Valider");
+        Button verifier =new Button("Valider");
         Label haveAnAccount =new Label("Vous voulez de se connecter");
-        Button signIn = new Button("Changer votre mot de passe");
+        Button signIn = new Button("Connecter");
         signIn.addActionListener(e->previous.showBack());
         signIn.setUIID("CenterLink");
         
@@ -81,54 +78,38 @@ TextField email;
        // new Label(res.getImage("oublier.png"),"CenterLabel"),
                 new FloatingHint(email),
                 createLineSeparator(),
-                valider,
+                verifier,
                 FlowLayout.encloseCenter(haveAnAccount),
                 signIn
         );
         content.setScrollableY(true);
         add(BorderLayout.CENTER,content);
-        valider.requestFocus();
-        valider.addActionListener((e)->
+        verifier.requestFocus();
+        verifier.addActionListener((e)->
         {
-            InfiniteProgress ip = new InfiniteProgress();
-            final Dialog ipDialog =ip.showInfiniteBlocking();
-            
-            sendMail(res);
-            ipDialog.dispose();
-            Dialog.show("Mot de passe","Nous avons envoyé le mot de passe a votre e-mail. Veillez verifier votre boite de réception",new Command("OK"));
-            new SignInForm(res).show();
-            refreshTheme();
+             if ( email.getText().length() == 0 || "false".equals(ServiceUtilisateur.getInstance().forgetPasswordCheck(email.getText()))) {
+                Dialog.show("Attention", "Veuillez verifier vos parametres ", new Command("OK"));
+            } else {
+                String verificationCode = valueOf(random.nextInt()).substring(1, 6);
+                this.verificationCode=verificationCode;
+                this.username=email.getText();
+
+                SendMail sendMail = new SendMail();
+                try {
+                    sendMail.send(email.getText(), "Code de verification", "Voice votre code de verification "+verificationCode);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+
+                }
+                Dialog.show("Code de Verification", "Veuillez verifier votre courrier", new Command("OK"));
+
+                new VerificationCodeForgetPassword(res).show();
+            }
+
         });
-        
+
+
     }
-    public void sendMail(Resources res){
-        try{
-            
-                Properties props = new Properties();
-                props.put("mail.transport.protocol", "smtp"); //SMTP Host
-		props.put("mail.smtps.host", "smtp.gmail.com"); //SMTP Host
-		props.put("mail.smtps.auth", "true"); //enable authentication
-		
-                Session session= Session.getInstance(props, null);
-                MimeMessage msg =new MimeMessage(session);
-                msg.setFrom(new InternetAddress("Rénitialisation mot de passe <monEmail@domaine.com>"));
-                msg.setRecipients(Message.RecipientType.TO, email.getText().toString());
-                msg.setSubject("Rénitialiser mot de passe");
-                msg.setSentDate(new Date(System.currentTimeMillis()));
-              String mp=  ServiceUtilisateur.getInstance().getPasswordByEmail(email.getText(), res);
-                String txt="Bienvenue sur Restoflex : Voici votre code secret pour Restaurer votre mot de passe"+mp;
-                msg.setText(txt);
-                SMTPTransport  st=(SMTPTransport) session.getTransport("smtp");
-                st.connect("smtp.gmail.com",465,"bouras.amir@esprit.tn","213JMT5266");
-                st.sendMessage(msg, msg.getAllRecipients());
-                System.out.println("server response"+st.getLastServerResponse());
-            
-            
-            
-            
-        }catch(Exception e){
-            e.printStackTrace();
-        }
-    }
+  
     
 }
